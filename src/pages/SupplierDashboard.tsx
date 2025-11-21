@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, DollarSign, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/ProductCard";
+import { AddProductForm } from "@/components/AddProductForm";
 import chairImage from "@/assets/chair-product.jpg";
 import sofaImage from "@/assets/sofa-product.jpg";
 
@@ -17,6 +19,8 @@ const myProducts = [
 ];
 
 export default function SupplierDashboard() {
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-start mb-8">
@@ -24,11 +28,13 @@ export default function SupplierDashboard() {
           <h1 className="text-4xl font-bold text-foreground mb-2">Supplier Dashboard</h1>
           <p className="text-muted-foreground">Manage your products and track performance</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
           <Plus className="h-4 w-4" />
           Add Product
         </Button>
       </div>
+
+      <AddProductForm open={isAddProductOpen} onOpenChange={setIsAddProductOpen} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
