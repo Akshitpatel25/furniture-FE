@@ -1,17 +1,25 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart, User, Search, Home, Package, Users } from "lucide-react";
+import { Menu, X, ShoppingCart, User, Search, Home, Package, Users, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/context/CartContext";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const { cartCount } = useCart();
   
-  // Mock user state - replace with actual auth
-  const userRole = null; // 'admin' | 'supplier' | 'customer' | null
+  const userRole = user?.role || null;
   
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
@@ -41,14 +49,14 @@ export const Navbar = () => {
             >
               Products
             </Link>
-            <Link 
+            {/* <Link 
               to="/categories" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 isActive('/categories') ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
               Categories
-            </Link>
+            </Link> */}
             {userRole === 'admin' && (
               <Link 
                 to="/admin" 
@@ -86,17 +94,30 @@ export const Navbar = () => {
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-              </Link>
-            </Button>
-            {userRole ? (
+            <div className="relative">
               <Button variant="ghost" size="icon" asChild>
-                <Link to={`/${userRole}`}>
-                  <User className="h-5 w-5" />
+                <Link to="/cart">
+                  <ShoppingCart className="h-5 w-5" />
                 </Link>
               </Button>
+              {cartCount > 0 && (
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+            {user ? (
+              <>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to={`/${userRole}`}>
+                    <User className="h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button variant="default" size="sm" onClick={handleLogout} className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </>
             ) : (
               <Button variant="default" asChild>
                 <Link to="/login">Sign In</Link>
@@ -154,7 +175,26 @@ export const Navbar = () => {
               <ShoppingCart className="inline h-4 w-4 mr-2" />
               Cart
             </Link>
-            {!userRole && (
+            {user ? (
+              <>
+                <Link 
+                  to={`/${userRole}`} 
+                  className="block py-2 text-sm font-medium hover:text-primary"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="inline h-4 w-4 mr-2" />
+                  Profile
+                </Link>
+                <Button 
+                  variant="default" 
+                  className="w-full gap-2 justify-start"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
               <Link 
                 to="/login" 
                 className="block py-2 text-sm font-medium hover:text-primary"

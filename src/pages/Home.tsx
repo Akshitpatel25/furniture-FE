@@ -1,18 +1,20 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sofa, Bed, Armchair, Lamp } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
+import api from "@/lib/api";
 import heroImage from "@/assets/hero-furniture.jpg";
-import chairImage from "@/assets/chair-product.jpg";
-import sofaImage from "@/assets/sofa-product.jpg";
-import tableImage from "@/assets/table-product.jpg";
 
-const featuredProducts = [
-  { id: "1", name: "Modern Oak Dining Chair", price: 299, image: chairImage, category: "Chairs" },
-  { id: "2", name: "Contemporary Fabric Sofa", price: 1299, image: sofaImage, category: "Sofas" },
-  { id: "3", name: "Minimalist Coffee Table", price: 449, image: tableImage, category: "Tables" },
-  { id: "4", name: "Elegant Dining Chair", price: 279, image: chairImage, category: "Chairs" },
-];
+type ApiProduct = {
+  _id: string;
+  product_name: string;
+  description: string;
+  price: number;
+  stock: number;
+  product_image?: string | null;
+};
 
 const categories = [
   { name: "Living Room", icon: Sofa, count: 245, color: "bg-accent-light" },
@@ -22,6 +24,27 @@ const categories = [
 ];
 
 export default function Home() {
+  const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api').replace('/api', '');
+
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['products', 'home'],
+    queryFn: async () => {
+      const res = await api.get('/products');
+      return res.data as ApiProduct[];
+    },
+  });
+
+  const featuredProducts = useMemo(() => {
+    if (!products) return [];
+    return products.slice(0, 4).map((p) => ({
+      id: p._id,
+      name: p.product_name,
+      price: p.price,
+      image: p.product_image ? `${API_ORIGIN}${p.product_image}` : '/placeholder.jpg',
+      category: '',
+    }));
+  }, [products, API_ORIGIN]);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -47,9 +70,9 @@ export default function Home() {
                   Shop Now <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              {/* <Button size="lg" variant="outline" asChild>
                 <Link to="/categories">Browse Categories</Link>
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
@@ -110,9 +133,13 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
+            {isLoading ? (
+              <p className="col-span-full text-muted-foreground">Loading products...</p>
+            ) : (
+              featuredProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))
+            )}
           </div>
 
           <div className="text-center mt-8 md:hidden">

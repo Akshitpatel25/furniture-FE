@@ -12,32 +12,41 @@ import { Upload } from "lucide-react";
 import api from "@/lib/api";
 
 const productSchema = z.object({
-  name: z.string().trim().min(3, "Product name must be at least 3 characters").max(100, "Product name must be less than 100 characters"),
-  description: z.string().trim().min(10, "Description must be at least 10 characters").max(1000, "Description must be less than 1000 characters"),
+  name: z.string().trim().min(3, "Product name must be at least 3 characters").max(100),
+  description: z.string().trim().min(10, "Description must be at least 10 characters").max(1000),
   price: z.number().min(0.01, "Price must be greater than 0"),
   stock: z.number().int().min(0, "Stock must be 0 or greater"),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-interface AddProductFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+type Product = {
+  _id: string;
+  product_name: string;
+  description: string;
+  price: number;
+  stock: number;
+  product_image?: string | null;
+};
+
+interface EditProductFormProps {
+  product: Product;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
-export function AddProductForm({ open, onOpenChange, onSuccess }: AddProductFormProps) {
+export function EditProductForm({ product, onClose, onSuccess }: EditProductFormProps) {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      stock: 0,
+      name: product.product_name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
     },
   });
 
@@ -53,23 +62,23 @@ export function AddProductForm({ open, onOpenChange, onSuccess }: AddProductForm
         formData.append('product_image', selectedFile);
       }
 
-      await api.post('/products/add', formData);
+      await api.put(`/products/${product._id}`, formData);
 
       toast({
-        title: "Product Added",
-        description: `${data.name} has been added successfully!`,
+        title: "Product Updated",
+        description: `${data.name} has been updated successfully!`,
       });
       reset();
       setImagePreview("");
       setSelectedFile(null);
-      onOpenChange(false);
-      onSuccess?.();
+      onSuccess();
+      onClose();
     } catch (err: unknown) {
       console.error(err);
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      const message = errObj?.response?.data?.message ?? errObj?.message ?? 'Unable to add product';
+      const message = errObj?.response?.data?.message ?? errObj?.message ?? 'Unable to update product';
       toast({
-        title: "Add Product Failed",
+        title: "Update Failed",
         description: message,
         variant: "destructive",
       });
@@ -91,12 +100,12 @@ export function AddProductForm({ open, onOpenChange, onSuccess }: AddProductForm
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>Edit Product</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Product Name</Label>
@@ -165,6 +174,8 @@ export function AddProductForm({ open, onOpenChange, onSuccess }: AddProductForm
               <label htmlFor="image" className="cursor-pointer">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
+                ) : product.product_image ? (
+                  <img src={product.product_image} alt="Current" className="max-h-48 mx-auto rounded-lg" />
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="h-10 w-10 text-muted-foreground" />
@@ -176,11 +187,11 @@ export function AddProductForm({ open, onOpenChange, onSuccess }: AddProductForm
           </div>
 
           <div className="flex gap-3 justify-end">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Product"}
+              {isLoading ? "Updating..." : "Update Product"}
             </Button>
           </div>
         </form>
