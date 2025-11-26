@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Package, TrendingUp } from "lucide-react";
+import { Users, Package, TrendingUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import api from "@/lib/api";
 
 type Stats = {
@@ -22,7 +24,13 @@ type Product = {
   };
 };
 
+type Supplier = { _id: string; name: string; email: string };
+type Customer = { _id: string; name: string; email: string };
+
 export default function AdminDashboard() {
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
   // Fetch stats
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ['admin', 'stats'],
@@ -46,7 +54,7 @@ export default function AdminDashboard() {
     queryKey: ['admin', 'suppliers'],
     queryFn: async () => {
       const res = await api.get('/admin/suppliers');
-      return res.data.suppliers as { _id: string; name: string; email: string }[];
+      return res.data.suppliers as Supplier[];
     },
   });
 
@@ -55,7 +63,7 @@ export default function AdminDashboard() {
     queryKey: ['admin', 'customers'],
     queryFn: async () => {
       const res = await api.get('/admin/customers');
-      return res.data.customers as { _id: string; name: string; email: string }[];
+      return res.data.customers as Customer[];
     },
   });
 
@@ -172,7 +180,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-4 text-sm">{s.name}</td>
                       <td className="py-3 px-4 text-sm">{s.email}</td>
                       <td className="py-3 px-4 text-sm">
-                        <Button variant="outline" size="sm">View</Button>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedSupplier(s)}>View</Button>
                       </td>
                     </tr>
                   ))}
@@ -207,7 +215,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-4 text-sm">{c.name}</td>
                       <td className="py-3 px-4 text-sm">{c.email}</td>
                       <td className="py-3 px-4 text-sm">
-                        <Button variant="outline" size="sm">View</Button>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedCustomer(c)}>View</Button>
                       </td>
                     </tr>
                   ))}
@@ -262,6 +270,56 @@ export default function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Supplier Details Dialog */}
+      <Dialog open={!!selectedSupplier} onOpenChange={(open) => !open && setSelectedSupplier(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supplier Details</DialogTitle>
+          </DialogHeader>
+          {selectedSupplier && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="font-medium">{selectedSupplier.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{selectedSupplier.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">ID</p>
+                <p className="font-mono text-xs break-all">{selectedSupplier._id}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Details Dialog */}
+      <Dialog open={!!selectedCustomer} onOpenChange={(open) => !open && setSelectedCustomer(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Customer Details</DialogTitle>
+          </DialogHeader>
+          {selectedCustomer && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="font-medium">{selectedCustomer.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{selectedCustomer.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">ID</p>
+                <p className="font-mono text-xs break-all">{selectedCustomer._id}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

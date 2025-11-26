@@ -22,7 +22,6 @@ export default function Cart() {
   const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api').replace('/api', '');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch product details for all items in cart
   const { data: products } = useQuery({
     queryKey: ['products', 'all'],
     queryFn: async () => {
@@ -48,19 +47,23 @@ export default function Cart() {
   );
 
   const [open, setOpen] = useState(false);
-  const tax = subtotal * 0.1; // 10% tax
+  const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
   const handleCheckout = async () => {
     setIsLoading(true);
     try {
-      const response = await api.post('/cart/checkout');
+      await api.post('/cart/checkout');
       toast({ title: 'Success', description: 'Order placed successfully!' });
       clearCart();
       setOpen(false);
       navigate('/');
     } catch (error: any) {
-      toast({ title: 'Error', description: error.response?.data?.message || 'Checkout failed', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: error.response?.data?.message || 'Checkout failed', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -168,7 +171,7 @@ export default function Cart() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button onClick={() => { setOpen(false); clearCart(); navigate('/'); }}>OK</Button>
+                    <Button onClick={handleCheckout} disabled={isLoading}>{isLoading ? 'Processing...' : 'Place Order'}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

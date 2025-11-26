@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { AuthContext } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 
@@ -11,6 +12,8 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+  const authContext = useContext(AuthContext);
+  const { user } = authContext || {};
   const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api').replace('/api', '');
 
   const { data: product, isLoading, error } = useQuery({
@@ -23,6 +26,16 @@ export default function ProductDetail() {
   });
 
   const handleAddToCart = () => {
+    if (!user) {
+      toast({
+        title: "Please Login",
+        description: "You need to login before adding items to cart",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+
     if (product) {
       addToCart(product._id, quantity);
       toast({

@@ -1,18 +1,28 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ShoppingCart, User, Search, Home, Package, Users, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/context/CartContext";
+import { AuthContext } from "@/context/AuthContext";
+import { Footer } from "./Footer";
 
-export const Navbar = () => {
+type NavbarProps = {
+  children?: React.ReactNode;
+  isLayout?: boolean;
+};
+
+export const Navbar = ({ children, isLayout = false }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
+  const authContext = useContext(AuthContext);
+  const contextUser = authContext?.user;
   
   const userRole = user?.role || null;
+  const isAdminOrSupplier = contextUser?.role === 'admin' || contextUser?.role === 'supplier';
   
   const isActive = (path: string) => location.pathname === path;
 
@@ -20,6 +30,68 @@ export const Navbar = () => {
     logout();
     setIsOpen(false);
   };
+
+  // Admin/Supplier Header with layout
+  if (isAdminOrSupplier && isLayout) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <Link to="/" className="flex items-center space-x-2">
+                <Home className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold text-primary">FurnitureHub</span>
+              </Link>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm">
+                  <p className="font-medium">{contextUser?.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{contextUser?.role}</p>
+                </div>
+                <Button variant="default" size="sm" onClick={handleLogout} className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+    );
+  }
+
+  // Customer Navbar with layout
+  if (isLayout) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <NavbarContent isOpen={isOpen} setIsOpen={setIsOpen} isActive={isActive} userRole={userRole} cartCount={cartCount} handleLogout={handleLogout} />
+        <main className="flex-1">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Just navbar without layout (for backward compatibility)
+  return (
+    <NavbarContent isOpen={isOpen} setIsOpen={setIsOpen} isActive={isActive} userRole={userRole} cartCount={cartCount} handleLogout={handleLogout} />
+  );
+};
+
+interface NavbarContentProps {
+  isOpen: boolean;
+  setIsOpen: (value: boolean) => void;
+  isActive: (path: string) => boolean;
+  userRole: string | null;
+  cartCount: number;
+  handleLogout: () => void;
+}
+
+const NavbarContent = ({ isOpen, setIsOpen, isActive, userRole, cartCount, handleLogout }: NavbarContentProps) => {
+  const { user } = useAuth();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
@@ -49,14 +121,6 @@ export const Navbar = () => {
             >
               Products
             </Link>
-            {/* <Link 
-              to="/categories" 
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/categories') ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              Categories
-            </Link> */}
             {userRole === 'admin' && (
               <Link 
                 to="/admin" 
@@ -108,11 +172,6 @@ export const Navbar = () => {
             </div>
             {user ? (
               <>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to={`/${userRole}`}>
-                    <User className="h-5 w-5" />
-                  </Link>
-                </Button>
                 <Button variant="default" size="sm" onClick={handleLogout} className="gap-2">
                   <LogOut className="h-4 w-4" />
                   Logout
@@ -161,13 +220,6 @@ export const Navbar = () => {
               Products
             </Link>
             <Link 
-              to="/categories" 
-              className="block py-2 text-sm font-medium hover:text-primary"
-              onClick={() => setIsOpen(false)}
-            >
-              Categories
-            </Link>
-            <Link 
               to="/cart" 
               className="block py-2 text-sm font-medium hover:text-primary"
               onClick={() => setIsOpen(false)}
@@ -177,14 +229,6 @@ export const Navbar = () => {
             </Link>
             {user ? (
               <>
-                <Link 
-                  to={`/${userRole}`} 
-                  className="block py-2 text-sm font-medium hover:text-primary"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <User className="inline h-4 w-4 mr-2" />
-                  Profile
-                </Link>
                 <Button 
                   variant="default" 
                   className="w-full gap-2 justify-start"

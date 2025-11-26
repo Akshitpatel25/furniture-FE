@@ -1,16 +1,13 @@
-import { useState, useContext, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, DollarSign, TrendingUp, Plus, Edit2, Trash2, RefreshCw } from "lucide-react";
+import { Package, DollarSign, TrendingUp, Plus, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddProductForm } from "@/components/AddProductForm";
 import { EditProductForm } from "@/components/EditProductForm";
 import { DeleteProductConfirm } from "@/components/DeleteProductConfirm";
 import api from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
-import { AuthContext } from "@/context/AuthContext";
-
-
 
 type Product = {
   _id: string;
@@ -25,26 +22,16 @@ export default function SupplierDashboard() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
-  const authContext = useContext(AuthContext);
-  const user = authContext?.user;
   const queryClient = useQueryClient();
   const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api').replace('/api', '');
 
-  const { data: products, isLoading, error, refetch } = useQuery({
-    queryKey: ['products', 'supplier', user?.id],
+  const { data: products, isLoading, error } = useQuery({
+    queryKey: ['products', 'supplier'],
     queryFn: async () => {
-      const res = await api.get(`/products?supplier_id=${user?.id}`);
+      const res = await api.get('/products');
       return res.data;
     },
-    enabled: !!user?.id,
   });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [refetch]);
 
   const handleDeleteSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['products', 'supplier'] });
@@ -83,15 +70,10 @@ export default function SupplierDashboard() {
           <h1 className="text-4xl font-bold text-foreground mb-2">Supplier Dashboard</h1>
           <p className="text-muted-foreground">Manage your products and track performance</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Product
-          </Button>
-        </div>
+        <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Add Product
+        </Button>
       </div>
 
       <AddProductForm open={isAddProductOpen} onOpenChange={setIsAddProductOpen} onSuccess={handleAddSuccess} />

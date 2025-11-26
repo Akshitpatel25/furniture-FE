@@ -168,7 +168,7 @@ export default function Cart() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button onClick={() => { setOpen(false); clearCart(); navigate('/'); }}>OK</Button>
+                    <Button onClick={handleCheckout} disabled={isLoading}>{isLoading ? 'Processing...' : 'Place Order'}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

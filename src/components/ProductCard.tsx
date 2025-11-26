@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/context/CartContext";
+import { AuthContext } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
@@ -19,9 +20,22 @@ export const ProductCard = ({ id, name, price, image, category, rating = 4.5 }: 
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const authContext = useContext(AuthContext);
+  const { user } = authContext || {};
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Please Login",
+        description: "You need to login before adding items to cart",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+
     addToCart(id, quantity);
     toast({
       title: "Added to Cart",
